@@ -46,8 +46,12 @@ cd aqi_forecasting_system
 python -m venv .venv
 .venv\Scripts\activate          # Windows
 # source .venv/bin/activate     # macOS / Linux
-pip install -r requirements.txt
+pip install -r requirements-pipeline.txt
 ```
+
+For Streamlit Cloud deployment, `requirements.txt` is intentionally lean and
+cloud-compatible. Local training and GitHub Actions use
+`requirements-pipeline.txt`.
 
 ### 2. Configure Secrets
 
@@ -231,6 +235,46 @@ Generated artefacts are saved to `data/shap_outputs/`.
 - **Hazardous alerts** — warning banner when PM2.5 exceeds 150 µg/m³
 - **SHAP explanations** — interactive feature importance bar chart
 - **Flask API integration** — connects to the REST API with local fallback
+
+---
+
+## Production Deployment (Recommended)
+
+### 1) Deploy API separately (Render)
+
+- This repo includes `render.yaml` for a Flask API service.
+- Render builds using `requirements-api.txt` and starts:
+
+```bash
+gunicorn --workers=2 --threads=4 --timeout=120 --bind=0.0.0.0:$PORT app.api:app
+```
+
+- Set these Render environment variables:
+  - `OPENWEATHER_API_KEY`
+  - `CITY`, `LAT`, `LON`
+  - `HOPSWORKS_API_KEY` (optional)
+  - `HOPSWORKS_PROJECT` (optional)
+  - `HOPSWORKS_HOST=eu-west.cloud.hopsworks.ai`
+
+### 2) Connect Streamlit Cloud to deployed API
+
+- Main file path: `app/streamlit_app.py`
+- In Streamlit app secrets, set:
+
+```toml
+AQI_API_BASE_URL = "https://<your-render-service>.onrender.com"
+OPENWEATHER_API_KEY = "<your-openweather-key>"
+CITY = "Karachi"
+LAT = "24.8607"
+LON = "67.0011"
+```
+
+Use `.streamlit/secrets.toml.example` as reference.
+
+### 3) Keep pipelines running
+
+- GitHub Actions workflows are configured for scheduled feature and training
+  jobs and install from `requirements-pipeline.txt`.
 
 ---
 
