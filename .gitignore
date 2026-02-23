@@ -19,12 +19,17 @@ Thumbs.db
 # Secrets
 .env
 
-# Data & model artefacts (tracked via DVC or artefact store)
+# Data & model artefacts (track only minimal runtime files)
 data/*.parquet
+!data/features_latest.parquet
 data/*.csv
 data/eda_outputs/
 data/shap_outputs/
-models/
+models/*
+!models/training_report.json
+!models/feature_columns.json
+!models/scaler.joblib
+!models/ridge_pm25.joblib
 
 # Logs
 logs/
