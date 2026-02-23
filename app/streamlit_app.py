@@ -18,6 +18,7 @@ Run
 
 from __future__ import annotations
 
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -79,7 +80,23 @@ CATEGORY_TEXT_COLORS: Dict[str, str] = {
 _ALERT_THRESHOLD_PM25 = 150  # µg/m³ — show warning if exceeded
 _DISPLAY_CITY = CITY.strip().title() or "Karachi"
 
-_API_BASE = f"http://{'127.0.0.1' if FLASK_HOST == '0.0.0.0' else FLASK_HOST}:{FLASK_PORT}"
+
+def _resolve_api_base() -> tuple[str, bool]:
+    """Return API base URL and whether an external API URL is configured."""
+    default_local = f"http://{'127.0.0.1' if FLASK_HOST == '0.0.0.0' else FLASK_HOST}:{FLASK_PORT}"
+    env_base = os.getenv("AQI_API_BASE_URL", "").strip()
+
+    secret_base = ""
+    try:
+        secret_base = str(st.secrets.get("AQI_API_BASE_URL", "")).strip()
+    except Exception:
+        pass
+
+    configured_base = secret_base or env_base
+    return (configured_base or default_local), bool(configured_base)
+
+
+_API_BASE, _HAS_EXTERNAL_API_CONFIG = _resolve_api_base()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -284,7 +301,10 @@ def _render_sidebar() -> Dict[str, Any]:
     if health:
         st.sidebar.success(f"API: **{health.get('status', 'OK').upper()}**")
     else:
-        st.sidebar.warning("API offline — using local inference")
+        if _HAS_EXTERNAL_API_CONFIG:
+            st.sidebar.warning("Configured API offline — using local inference")
+        else:
+            st.sidebar.info("No external API configured — using local inference")
 
     st.sidebar.markdown("---")
     st.sidebar.caption(
