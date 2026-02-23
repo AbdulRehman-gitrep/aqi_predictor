@@ -24,9 +24,9 @@ HOPSWORKS_PROJECT: str = os.getenv("HOPSWORKS_PROJECT", "aqi_project")
 HOPSWORKS_HOST: str = os.getenv("HOPSWORKS_HOST", "eu-west.cloud.hopsworks.ai")
 WINDOWS_TMP_DIR: str = os.getenv("WINDOWS_TMP_DIR", "D:/tmp")
 OPENWEATHER_API_KEY: str = os.getenv("OPENWEATHER_API_KEY", "")
-CITY: str = os.getenv("CITY", "")
-LAT: float = float(os.getenv("LAT", "0.0"))
-LON: float = float(os.getenv("LON", "0.0"))
+CITY: str = os.getenv("CITY", "Karachi")
+LAT: float = float(os.getenv("LAT", "24.8607"))
+LON: float = float(os.getenv("LON", "67.0011"))
 
 # ===========================================================================
 # 2. Project Paths

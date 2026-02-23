@@ -77,6 +77,7 @@ CATEGORY_TEXT_COLORS: Dict[str, str] = {
 }
 
 _ALERT_THRESHOLD_PM25 = 150  # µg/m³ — show warning if exceeded
+_DISPLAY_CITY = CITY.strip().title() or "Karachi"
 
 _API_BASE = f"http://{'127.0.0.1' if FLASK_HOST == '0.0.0.0' else FLASK_HOST}:{FLASK_PORT}"
 
@@ -216,7 +217,7 @@ def _local_forecast(horizon: int) -> Optional[Dict[str, Any]]:
             lambda t: t.isoformat() if hasattr(t, "isoformat") else str(t)
         )
         return {
-            "city": CITY.strip().title(),
+            "city": _DISPLAY_CITY,
             "model_type": pred.model_type,
             "horizon_hours": horizon,
             "count": len(forecast_df),
@@ -287,7 +288,7 @@ def _render_sidebar() -> Dict[str, Any]:
 
     st.sidebar.markdown("---")
     st.sidebar.caption(
-        f"City: **{CITY.strip().title()}**  \n"
+        f"City: **{_DISPLAY_CITY}**  \n"
         f"Default horizon: **{FORECAST_HORIZON} h**  \n"
         f"Alert threshold: **{_ALERT_THRESHOLD_PM25} µg/m³**"
     )
@@ -303,7 +304,7 @@ def _render_header() -> None:
     )
     st.caption(
         f"Real-time 72-hour recursive PM2.5 forecasting for "
-        f"**{CITY.strip().title()}** — powered by RF · Ridge · DNN"
+        f"**{_DISPLAY_CITY}** — powered by RF · Ridge · DNN"
     )
     st.markdown("")  # spacer
 
@@ -388,7 +389,7 @@ def _render_forecast_chart(data: Dict[str, Any]) -> None:
     df = pd.DataFrame(forecast_list)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-    city = data.get("city", CITY.strip().title())
+    city = data.get("city", _DISPLAY_CITY)
     horizon = data.get("horizon_hours", len(df))
 
     fig = go.Figure()
@@ -627,7 +628,7 @@ def main() -> None:
 
     if data is None:
         data = _local_forecast(horizon)
-        source_label = "Local inference"
+        source_label = "Local model inference (API server not running on Cloud)"
 
     if data is None:
         st.error(
