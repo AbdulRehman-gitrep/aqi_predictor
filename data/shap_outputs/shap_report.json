@@ -1,0 +1,12 @@
+{
+  "model_type": "ridge",
+  "n_samples": 1,
+  "n_features": 13,
+  "top_features": [
+    "aqi_change_rate",
+    "co",
+    "day",
+    "hour",
+    "humidity"
+  ]
+}

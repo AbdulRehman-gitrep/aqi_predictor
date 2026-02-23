@@ -24,7 +24,11 @@ data/*.parquet
 !data/features_latest.parquet
 data/*.csv
 data/eda_outputs/
-data/shap_outputs/
+data/shap_outputs/*
+!data/shap_outputs/shap_feature_ranking.csv
+!data/shap_outputs/shap_report.json
+!data/shap_outputs/shap_summary.png
+!data/shap_outputs/shap_feature_importance.png
 models/*
 !models/training_report.json
 !models/feature_columns.json
