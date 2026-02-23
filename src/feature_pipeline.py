@@ -11,11 +11,16 @@ Time-based features    : hour, day, month
 Derived features       : aqi_change_rate, rolling_mean_3
 """
 
+from __future__ import annotations
+
 import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import hsfs
+try:
+    import hsfs
+except Exception:  # pragma: no cover - optional for local-only serving
+    hsfs = None
 import pandas as pd
 import requests
 
@@ -232,6 +237,9 @@ def get_feature_store() -> hsfs.feature_store.FeatureStore:
     Authenticate with Hopsworks using the API key from the .env file
     and return the feature-store handle.
     """
+    if hsfs is None:
+        raise RuntimeError("hsfs is not installed. Install hsfs to use Hopsworks feature store.")
+
     project = login_to_hopsworks()
     fs: hsfs.feature_store.FeatureStore = project.get_feature_store()
     log.info("Connected to Hopsworks feature store")

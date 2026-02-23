@@ -6,7 +6,10 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-import hopsworks
+try:
+    import hopsworks
+except Exception:  # pragma: no cover - optional in lightweight deploys
+    hopsworks = None
 
 from src.config import (
     HOPSWORKS_API_KEY,
@@ -32,6 +35,12 @@ def _prepare_windows_temp_dir() -> None:
 
 def login_to_hopsworks() -> Any:
     """Authenticate and return the current Hopsworks project handle."""
+    if hopsworks is None:
+        raise RuntimeError(
+            "hopsworks package is not installed. "
+            "Install it to use Hopsworks registry/feature-store paths."
+        )
+
     _prepare_windows_temp_dir()
 
     login_kwargs: Dict[str, str] = {
