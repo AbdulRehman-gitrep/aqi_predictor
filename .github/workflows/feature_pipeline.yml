@@ -8,6 +8,10 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
+  HOPSWORKS_HOST: "eu-west.cloud.hopsworks.ai"
+  CITY: "Karachi"
+  LAT: "24.8607"
+  LON: "67.0011"
 
 jobs:
   feature-pipeline:
@@ -29,14 +33,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-pipeline.txt
 
-      - name: Run Feature Pipeline
+      - name: Validate required secrets
         env:
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
           HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          CITY: ${{ secrets.CITY }}
-          LAT: ${{ secrets.LAT }}
-          LON: ${{ secrets.LON }}
+        run: |
+          test -n "$HOPSWORKS_API_KEY" || (echo "Missing secret: HOPSWORKS_API_KEY" && exit 1)
+          test -n "$HOPSWORKS_PROJECT" || (echo "Missing secret: HOPSWORKS_PROJECT" && exit 1)
+          test -n "$OPENWEATHER_API_KEY" || (echo "Missing secret: OPENWEATHER_API_KEY" && exit 1)
+          echo "Secrets validation passed"
+
+      - name: Run Feature Pipeline
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT }}
+          HOPSWORKS_HOST: ${{ env.HOPSWORKS_HOST }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          CITY: ${{ env.CITY }}
+          LAT: ${{ env.LAT }}
+          LON: ${{ env.LON }}
         run: |
           python main.py --pipeline features
 
