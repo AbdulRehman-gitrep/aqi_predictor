@@ -70,6 +70,15 @@ def _load_model_and_type(
     report = load_json(model_dir / "training_report.json")
     model_type: str = report["best_model"]
 
+    # DNN's GradientExplainer is incompatible with modern Keras;
+    # fall back to Ridge (LinearExplainer) which is reliable.
+    if model_type == "dnn":
+        log.warning(
+            "Best model is DNN but SHAP GradientExplainer has Keras "
+            "compatibility issues — falling back to Ridge for SHAP."
+        )
+        model_type = "ridge"
+
     artefact = _MODEL_ARTEFACTS.get(model_type)
     if artefact is None:
         raise ValueError(f"Unknown model type in training report: {model_type}")
@@ -397,9 +406,36 @@ def run_shap_explanation(
     """
     from src.utils import load_dataframe
 
-    if not data_path:
-        data_path = str(DATA_DIR / "features_latest.parquet")
-    df = load_dataframe(data_path)
+    if data_path:
+        df = load_dataframe(data_path)
+    else:
+        candidate_paths = [
+            DATA_DIR / "features_history.parquet",
+            DATA_DIR / "features_latest.parquet",
+            *sorted(DATA_DIR.glob("backfill_*.parquet")),
+        ]
+        best_df: Optional[pd.DataFrame] = None
+        best_path: Optional[Path] = None
+        best_rows = -1
+
+        for p in candidate_paths:
+            if not p.exists():
+                continue
+            try:
+                part = load_dataframe(p)
+            except Exception as exc:
+                log.warning(f"Skipping unreadable SHAP input file '{p}': {exc}")
+                continue
+            if len(part) > best_rows:
+                best_rows = len(part)
+                best_df = part
+                best_path = p
+
+        if best_df is None:
+            raise FileNotFoundError("No local data file found for SHAP explanation")
+
+        log.info(f"Using SHAP input file: {best_path} ({best_rows} rows)")
+        df = best_df
 
     meta = load_json(MODEL_DIR / "feature_columns.json")
     feature_cols = meta["feature_columns"]

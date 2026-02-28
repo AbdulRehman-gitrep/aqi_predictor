@@ -18,7 +18,6 @@ Run
 
 from __future__ import annotations
 
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,8 +53,8 @@ from src.utils import load_dataframe, load_json, log
 # Page configuration
 # ═══════════════════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title="PM2.5 AQI Forecast",
-    page_icon="🌍",
+    page_title="10Pearls AQI Forecast",
+    page_icon="🏭",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -78,25 +77,8 @@ CATEGORY_TEXT_COLORS: Dict[str, str] = {
 }
 
 _ALERT_THRESHOLD_PM25 = 150  # µg/m³ — show warning if exceeded
-_DISPLAY_CITY = CITY.strip().title() or "Karachi"
 
-
-def _resolve_api_base() -> tuple[str, bool]:
-    """Return API base URL and whether an external API URL is configured."""
-    default_local = f"http://{'127.0.0.1' if FLASK_HOST == '0.0.0.0' else FLASK_HOST}:{FLASK_PORT}"
-    env_base = os.getenv("AQI_API_BASE_URL", "").strip()
-
-    secret_base = ""
-    try:
-        secret_base = str(st.secrets.get("AQI_API_BASE_URL", "")).strip()
-    except Exception:
-        pass
-
-    configured_base = secret_base or env_base
-    return (configured_base or default_local), bool(configured_base)
-
-
-_API_BASE, _HAS_EXTERNAL_API_CONFIG = _resolve_api_base()
+_API_BASE = f"http://{'127.0.0.1' if FLASK_HOST == '0.0.0.0' else FLASK_HOST}:{FLASK_PORT}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -234,7 +216,7 @@ def _local_forecast(horizon: int) -> Optional[Dict[str, Any]]:
             lambda t: t.isoformat() if hasattr(t, "isoformat") else str(t)
         )
         return {
-            "city": _DISPLAY_CITY,
+            "city": CITY.strip().title(),
             "model_type": pred.model_type,
             "horizon_hours": horizon,
             "count": len(forecast_df),
@@ -301,14 +283,11 @@ def _render_sidebar() -> Dict[str, Any]:
     if health:
         st.sidebar.success(f"API: **{health.get('status', 'OK').upper()}**")
     else:
-        if _HAS_EXTERNAL_API_CONFIG:
-            st.sidebar.warning("Configured API offline — using local inference")
-        else:
-            st.sidebar.info("No external API configured — using local inference")
+        st.sidebar.warning("API offline — using local inference")
 
     st.sidebar.markdown("---")
     st.sidebar.caption(
-        f"City: **{_DISPLAY_CITY}**  \n"
+        f"City: **{CITY.strip().title()}**  \n"
         f"Default horizon: **{FORECAST_HORIZON} h**  \n"
         f"Alert threshold: **{_ALERT_THRESHOLD_PM25} µg/m³**"
     )
@@ -319,12 +298,12 @@ def _render_sidebar() -> Dict[str, Any]:
 # ---------- Header ---------------------------------------------------------
 def _render_header() -> None:
     st.markdown(
-        "<h1 style='margin-bottom:0;'>🌍 PM2.5 AQI Forecast Dashboard</h1>",
+        "<h1 style='margin-bottom:0; color:#ffffff;'>🏭 10Pearls AQI Forecast Dashboard</h1>",
         unsafe_allow_html=True,
     )
     st.caption(
-        f"Real-time 72-hour recursive PM2.5 forecasting for "
-        f"**{_DISPLAY_CITY}** — powered by RF · Ridge · DNN"
+        f"📍 Real-time 72-hour recursive PM2.5 forecasting for "
+        f"**{CITY.strip().title()}** — powered by RF · Ridge · DNN"
     )
     st.markdown("")  # spacer
 
@@ -409,7 +388,7 @@ def _render_forecast_chart(data: Dict[str, Any]) -> None:
     df = pd.DataFrame(forecast_list)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-    city = data.get("city", _DISPLAY_CITY)
+    city = data.get("city", CITY.strip().title())
     horizon = data.get("horizon_hours", len(df))
 
     fig = go.Figure()
@@ -648,7 +627,7 @@ def main() -> None:
 
     if data is None:
         data = _local_forecast(horizon)
-        source_label = "Local model inference (API server not running on Cloud)"
+        source_label = "Local inference"
 
     if data is None:
         st.error(
@@ -685,13 +664,13 @@ def main() -> None:
     # ── SHAP section ──────────────────────────────────────────────────────
     if selections["show_shap"]:
         st.markdown("---")
-        st.subheader("🔍 Model Explainability (SHAP)")
+        st.subheader("� Model Explainability (SHAP)")
         _render_shap_section()
 
     # ── Footer ────────────────────────────────────────────────────────────
     st.markdown("---")
     st.caption(
-        "PM2.5 AQI Forecast Dashboard · Built with Streamlit & Plotly · "
+        "🏢 10Pearls AQI Forecast Dashboard · Built with Streamlit & Plotly · "
         f"© {datetime.now().year}"
     )
 

@@ -115,9 +115,44 @@ def load_training_data_local(
     path: str = "",
 ) -> pd.DataFrame:
     """Fallback: load features from a local Parquet/CSV file."""
-    if not path:
-        path = str(DATA_DIR / "features_latest.parquet")
-    return load_dataframe(path)
+    if path:
+        return load_dataframe(path)
+
+    candidate_paths = [
+        DATA_DIR / "features_history.parquet",
+        DATA_DIR / "features_latest.parquet",
+        *sorted(DATA_DIR.glob("backfill_*.parquet")),
+    ]
+
+    frames: List[pd.DataFrame] = []
+    used_paths: List[str] = []
+    for p in candidate_paths:
+        if p.exists():
+            try:
+                df_part = load_dataframe(p)
+                if not df_part.empty:
+                    frames.append(df_part)
+                    used_paths.append(str(p))
+            except Exception as exc:
+                log.warning(f"Skipping unreadable local training file '{p}': {exc}")
+
+    if not frames:
+        return load_dataframe(DATA_DIR / "features_latest.parquet")
+
+    df = pd.concat(frames, ignore_index=True)
+    if {DATETIME_COLUMN, CITY_COLUMN}.issubset(df.columns):
+        df[DATETIME_COLUMN] = pd.to_datetime(df[DATETIME_COLUMN], utc=True)
+        df = df.sort_values([CITY_COLUMN, DATETIME_COLUMN])
+        df = df.drop_duplicates(
+            subset=[DATETIME_COLUMN, CITY_COLUMN],
+            keep="last",
+        )
+
+    df = df.reset_index(drop=True)
+    log.info(
+        f"Local training data assembled from {len(used_paths)} file(s) → {df.shape}"
+    )
+    return df
 
 
 # ===========================================================================

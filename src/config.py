@@ -16,21 +16,6 @@ from dotenv import load_dotenv
 # ---------------------------------------------------------------------------
 load_dotenv()
 
-
-def _env_float(name: str, default: str) -> float:
-    value = os.getenv(name, default)
-    if value is None:
-        return float(default)
-
-    value = value.strip()
-    if value == "":
-        return float(default)
-
-    try:
-        return float(value)
-    except ValueError:
-        return float(default)
-
 # ===========================================================================
 # 1. Environment Variables (single source of truth)
 # ===========================================================================
@@ -39,9 +24,9 @@ HOPSWORKS_PROJECT: str = os.getenv("HOPSWORKS_PROJECT", "aqi_project")
 HOPSWORKS_HOST: str = os.getenv("HOPSWORKS_HOST", "eu-west.cloud.hopsworks.ai")
 WINDOWS_TMP_DIR: str = os.getenv("WINDOWS_TMP_DIR", "D:/tmp")
 OPENWEATHER_API_KEY: str = os.getenv("OPENWEATHER_API_KEY", "")
-CITY: str = os.getenv("CITY", "Karachi")
-LAT: float = _env_float("LAT", "24.8607")
-LON: float = _env_float("LON", "67.0011")
+CITY: str = os.getenv("CITY", "")
+LAT: float = float(os.getenv("LAT", "0.0"))
+LON: float = float(os.getenv("LON", "0.0"))
 
 # ===========================================================================
 # 2. Project Paths
